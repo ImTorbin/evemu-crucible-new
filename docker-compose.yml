@@ -24,19 +24,20 @@ services:
     cap_add: #This is required for gdb to work
       - SYS_PTRACE
 
+  # Official MariaDB image — bitnami/mariadb tags like :10.4 were removed/moved (use bitnamilegacy/mariadb if you must stay on Bitnami layout).
   db:
-    image: "bitnami/mariadb:10.4"
+    image: "mariadb:10.11"
     container_name: evemu_db
     volumes:
-      - db:/bitnami/mariadb
-    # If you want to connect to the Database pick your host port to map it to, (host-port:container-port) below. 
+      - db:/var/lib/mysql
+    # If you want to connect to the Database pick your host port to map it to, (host-port:container-port) below.
     #ports:
-    #  - "3306:3306"  
+    #  - "3306:3306"
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - MARIADB_USER=evemu
-      - MARIADB_PASSWORD=evemu
-      - MARIADB_DATABASE=evemu
+      MYSQL_ROOT_PASSWORD: evemu_root
+      MYSQL_DATABASE: evemu
+      MYSQL_USER: evemu
+      MYSQL_PASSWORD: evemu
 volumes:
   db:
   config:
