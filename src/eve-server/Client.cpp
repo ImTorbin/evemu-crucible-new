@@ -216,7 +216,7 @@ bool Client::ProcessNet()
     while ((p = PopPacket())) {
         try {
             if (!DispatchPacket(p))
-                sLog.Error("Client", "%s: Failed to dispatch packet of type %s (%i).", m_char->name(), MACHONETMSG_TYPE_NAMES[ p->type ], (int)p->type);
+                sLog.Error("Client", "%s: Failed to dispatch packet of type %s (%i).", GetName(), MACHONETMSG_TYPE_NAMES[ p->type ], (int)p->type);
         }
         catch(PyException& e) {
             _SendException(p->dest, p->source.callID, p->type, WRAPPEDEXCEPTION, &e.ssException);
@@ -2683,19 +2683,19 @@ bool Client::Handle_Notify(PyPacket* packet)
         PyList::const_iterator cur = notify.elements->begin();
         for (; cur != notify.elements->end(); ++cur) {
             if (!element.Decode(*cur)) {
-                sLog.Error("Client::Notify","Notification '%s' from %s: Failed to decode element. Skipping.", notify.method.c_str(),  m_char->name());
+                sLog.Error("Client::Notify","Notification '%s' from %s: Failed to decode element. Skipping.", notify.method.c_str(), GetName());
                 continue;
             }
 
             if (sscanf(element.boundID.c_str(), "N=%u:%u", &nodeID, &bindID) != 2) {
                 sLog.Error("Client::Notify","Notification '%s' from %s: Failed to parse bind string '%s'. Skipping.", \
-                           notify.method.c_str(), m_char->name(), element.boundID.c_str());
+                           notify.method.c_str(), GetName(), element.boundID.c_str());
                 continue;
             }
 
             if (nodeID != m_services.GetNodeID()) {
                 sLog.Error("Client::Notify","Notification '%s' from %s: Unknown nodeID %u received (expected %u). Skipping.", \
-                           notify.method.c_str(), m_char->name(), nodeID, m_services.GetNodeID());
+                           notify.method.c_str(), GetName(), nodeID, m_services.GetNodeID());
                 continue;
             }
 
@@ -2704,7 +2704,7 @@ bool Client::Handle_Notify(PyPacket* packet)
             m_services.ClearBoundObject(bindID, this);
         }
     } else {
-        sLog.Error("Client::Notify","Unhandled notification from %s: unknown method '%s'", m_char->name(), notify.method.c_str());
+        sLog.Error("Client::Notify","Unhandled notification from %s: unknown method '%s'", GetName(), notify.method.c_str());
         return false;
     }
 
