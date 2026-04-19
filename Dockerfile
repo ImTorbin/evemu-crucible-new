@@ -36,11 +36,16 @@ ADD /sql/ /src/sql
 # copy our compiled code to this image
 COPY --from=app-build /app/ /app
 
-RUN cd /src/sql && ./get_evedbtool.sh
+# ADD loses executable bits on some hosts (common with Windows checkouts).
+RUN chmod +x \
+    /src/sql/get_evedbtool.sh \
+    /src/utils/container-scripts/start.sh \
+    /src/utils/container-scripts/db_init.sh \
+    && cd /src/sql && ./get_evedbtool.sh
 
 # Expose the port the server is on.
 EXPOSE 26000
 EXPOSE 26001
 
-# Start the app via the script.
-CMD /src/utils/container-scripts/start.sh
+# Start the app via the script (exec form for clean signals).
+CMD ["/bin/bash", "/src/utils/container-scripts/start.sh"]
