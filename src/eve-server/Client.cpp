@@ -59,6 +59,24 @@
 #include "pos/Tower.h"
 #include "system/cosmicMgrs/WormholeMgr.h"
 
+#include <cstdio>
+#include <ctime>
+
+// #region agent log
+/** NDJSON debug ingest (session f78612); keep until post-fix verification. */
+static void DbgAgentLog(const char* hypothesisId, const char* location, int validSession, int hasChar, uint32 charId, const char* runId)
+{
+    FILE* f = std::fopen("debug-f78612.log", "a");
+    if (f) {
+        long long ts = static_cast<long long>(std::time(nullptr)) * 1000LL;
+        std::fprintf(f,
+            "{\"sessionId\":\"f78612\",\"hypothesisId\":\"%s\",\"location\":\"%s\",\"message\":\"agent\",\"data\":{\"validSession\":%d,\"hasChar\":%d,\"charId\":%u},\"timestamp\":%lld,\"runId\":\"%s\"}\n",
+            hypothesisId, location, validSession, hasChar, charId, ts, runId);
+        std::fclose(f);
+    }
+}
+// #endregion
+
 static const uint32 PING_INTERVAL_MS = 600000; //10m
 
 Client::Client(EVEServiceManager& services, EVETCPConnection** con)
@@ -259,6 +277,12 @@ bool Client::SelectCharacter(int32 charID/*0*/)
     if (m_system == nullptr) {
         sLog.Error("Client::SelectCharacter()", "Failed to boot system %u for char %u.", m_systemData.systemID, charID);
         SendErrorMsg("SolarSystem %s(%u) - Boot Failure.", m_systemData.name.c_str(), m_systemData.systemID);
+        // #region agent log
+        DbgAgentLog("H1", "SelectCharacter:boot_system_fail", m_validSession ? 1 : 0, 0,
+            static_cast<uint32>(charID), "pre-fix");
+        // #endregion
+        sEntityList.RemovePlayer(this);
+        sItemFactory.UnsetUsingClient();
         CloseClientConnection();
         return false;
     }
@@ -267,6 +291,11 @@ bool Client::SelectCharacter(int32 charID/*0*/)
     if (m_char.get() == nullptr) {
         sLog.Error("Client::SelectCharacter()", "GetChar for %u = nullptr", charID);
         SendErrorMsg("Unable to locate Character.  Selection Failed.");
+        // #region agent log
+        DbgAgentLog("H1", "SelectCharacter:get_char_fail", m_validSession ? 1 : 0, 0,
+            static_cast<uint32>(charID), "pre-fix");
+        // #endregion
+        sEntityList.RemovePlayer(this);
         sItemFactory.UnsetUsingClient();
         CloseClientConnection();
         return false;
@@ -354,6 +383,14 @@ bool Client::SelectCharacter(int32 charID/*0*/)
 void Client::ProcessClient() {
     if (m_charCreation)
         return;
+
+    // #region agent log
+    if (m_char.get() == nullptr) {
+        DbgAgentLog("H1", "Client::ProcessClient:null_char", m_validSession ? 1 : 0, 0,
+            static_cast<uint32>(GetCharacterID()), "pre-fix");
+        return;
+    }
+    // #endregion
 
     double profileStartTime(GetTimeUSeconds());
 
