@@ -61,6 +61,7 @@
 
 #include <cstdio>
 #include <ctime>
+#include <string>
 
 // #region agent log
 /** NDJSON debug ingest (session f78612); keep until post-fix verification. */
@@ -76,6 +77,17 @@ static void DbgAgentLog(const char* hypothesisId, const char* location, int vali
     }
 }
 // #endregion
+
+/** RPCs the client may send after account auth but before SelectCharacter assigns m_char. */
+static bool ServiceOkBeforeCharacterLoaded(const std::string& svc)
+{
+    return svc == "charUnboundMgr"
+        || svc == "objectCaching"
+        || svc == "bulkMgr"
+        || svc == "config"
+        || svc == "languageSvc"
+        || svc == "localizationServer";
+}
 
 static const uint32 PING_INTERVAL_MS = 600000; //10m
 
@@ -2644,6 +2656,24 @@ bool Client::Handle_CallReq(PyPacket* packet, PyCallStream& req)
     PyCallArgs args(this, req.arg_tuple, req.arg_dict);
     PyResult result;
     uint32 nodeID = 0, bindID = 0;
+
+    // In-world and bound RPCs assume m_char; reject until character select completes.
+    if (m_char.get() == nullptr && !m_charCreation) {
+        if (packet->dest.service.empty()) {
+            sLog.Warning("Client::CallReq", "Rejecting bound call %s::%s (no character loaded).",
+                req.remoteObjectStr.c_str(), req.method.c_str());
+            SendSessionChange();
+            _SendCallReturn(packet->dest, packet->source.callID, result);
+            return true;
+        }
+        if (!ServiceOkBeforeCharacterLoaded(packet->dest.service)) {
+            sLog.Warning("Client::CallReq", "Rejecting %s::%s (no character loaded).",
+                packet->dest.service.c_str(), req.method.c_str());
+            SendSessionChange();
+            _SendCallReturn(packet->dest, packet->source.callID, result);
+            return true;
+        }
+    }
 
     // try to handle with the new service handler and fallback to the old version
     try

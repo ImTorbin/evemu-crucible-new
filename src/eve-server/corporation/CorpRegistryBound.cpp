@@ -462,8 +462,8 @@ PyResult CorpRegistryBound::GetMembersPaged(PyCallArgs &call, PyInt* page) {
     PyList* list = new PyList();
     DBResultRow row;
     while (res.GetRow(row)) {
-        //SELECT characterID, corporationID, title, rolesAtAll, grantableRoles, startDateTime, rolesAtHQ, grantableRolesAtHQ, \
-          rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, titleMask, corpAccountKey, baseID, blockRoles, name
+        // SELECT characterID, corporationID, title, rolesAtAll, grantableRoles, startDateTime, rolesAtHQ, grantableRolesAtHQ,
+        // rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, titleMask, corpAccountKey, baseID, blockRoles, name
         PyDict* dict = new PyDict();
         dict->SetItemString( "characterID",             new PyInt(row.GetInt(0)));
         dict->SetItemString( "corporationID",           new PyInt(row.GetInt(1)));
@@ -1150,10 +1150,9 @@ PyResult CorpRegistryBound::GetMemberIDsByQuery(PyCallArgs &call, PyList* queryL
     return list;
 }
 
-//SELECT `characterID`\
-`corpRole`, `rolesAtAll`, `rolesAtHQ`, `rolesAtBase`, `rolesAtOther`, \
-`grantableRoles`, `grantableRolesAtHQ`, `grantableRolesAtBase`, `grantableRolesAtOther`,\
-`titleMask`, `blockRoles`, `baseID`, `startDateTime` FROM `chrCharacters` WHERE 1
+// SELECT `characterID`, `corpRole`, `rolesAtAll`, `rolesAtHQ`, `rolesAtBase`, `rolesAtOther`,
+// `grantableRoles`, `grantableRolesAtHQ`, `grantableRolesAtBase`, `grantableRolesAtOther`,
+// `titleMask`, `blockRoles`, `baseID`, `startDateTime` FROM `chrCharacters` WHERE 1
 bool CorpRegistryBound::GetSearchValues(int8 op, PyRep* rep, std::ostringstream& query)
 {
     using namespace Corp;

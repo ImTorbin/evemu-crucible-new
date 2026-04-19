@@ -164,19 +164,19 @@ public:
     uint32 GetLoyaltyPoints(uint32 corpID);
     void SetChar(CharacterRef charRef)                  { m_char = charRef; }   // only used during char creation
     CharacterRef GetChar() const                        { return m_char; }
-    std::string GetCharName()                           { return m_char->itemName(); }
+    std::string GetCharName()                           { return (m_char.get() != nullptr ? m_char->itemName() : std::string("(null)")); }
     uint32 GetCharID()                                  { return (m_char.get() != nullptr ? m_char->itemID() : 0); }   // only used during char creation
     ShipItemRef GetShip() const                         { return m_ship; }
     ShipSE* GetShipSE()                                 { return pShipSE; }
     ShipItemRef GetPod() const                          { return m_pod; }
     uint32 GetPodID() const                             { return m_pod->itemID(); }
-    float GetBounty() const                             { return m_char->bounty(); }
-    float GetSecurityRating() const                     { return m_char->GetSecurityRating(); }
+    float GetBounty() const                             { return (m_char.get() != nullptr ? m_char->bounty() : 0.f); }
+    float GetSecurityRating() const                     { return (m_char.get() != nullptr ? m_char->GetSecurityRating() : 0.f); }
 
     bool AddBalance(float amount, uint8 type=Account::CreditType::ISK)
-                                                        { return m_char->AlterBalance(amount, type); }
+                                                        { return (m_char.get() != nullptr && m_char->AlterBalance(amount, type)); }
     float GetBalance(uint8 type=Account::CreditType::ISK)
-                                                        { return m_char->balance(type); }
+                                                        { return (m_char.get() != nullptr ? m_char->balance(type) : 0.f); }
 
     // ship functions
     void SetPodItem();
