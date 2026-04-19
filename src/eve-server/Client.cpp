@@ -216,7 +216,9 @@ bool Client::ProcessNet()
     while ((p = PopPacket())) {
         try {
             if (!DispatchPacket(p))
-                sLog.Error("Client", "%s: Failed to dispatch packet of type %s (%i).", GetName(), MACHONETMSG_TYPE_NAMES[ p->type ], (int)p->type);
+                /* Do not use GetName()/m_char here — login may not have a Character yet (RefPtr asserts). */
+                sLog.Error("Client", "[%s]: Failed to dispatch packet of type %s (%i).",
+                    GetAddress().c_str(), MACHONETMSG_TYPE_NAMES[ p->type ], (int)p->type);
         }
         catch(PyException& e) {
             _SendException(p->dest, p->source.callID, p->type, WRAPPEDEXCEPTION, &e.ssException);
