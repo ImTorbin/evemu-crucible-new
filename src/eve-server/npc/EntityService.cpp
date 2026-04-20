@@ -206,7 +206,7 @@ PyResult EntityBound::CmdEngage(PyCallArgs &call, PyList* droneIDs, PyInt* targe
         return new PyDict();
     }
 
-    double controlRange = pShip->GetShipRef()->GetAttribute(AttrDroneControlDistance).get_double();
+    double controlRange = pShip->GetShipItemRef()->GetAttribute(AttrDroneControlDistance).get_double();
     if (controlRange < 100.0)
         controlRange = 65000.0;
 
