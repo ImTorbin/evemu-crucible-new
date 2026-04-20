@@ -86,7 +86,8 @@ static bool ServiceOkBeforeCharacterLoaded(const std::string& svc)
         || svc == "bulkMgr"
         || svc == "config"
         || svc == "languageSvc"
-        || svc == "localizationServer";
+        || svc == "localizationServer"
+        || svc == "authentication";   /* AuthService::Ping, GetPostAuthenticationMessage, etc. */
 }
 
 static const uint32 PING_INTERVAL_MS = 600000; //10m

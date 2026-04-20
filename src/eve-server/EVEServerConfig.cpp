@@ -222,7 +222,7 @@ EVEServerConfig::EVEServerConfig()
     crime.WeaponFlagTime = 60 /*s*/;//N
 
     // testing
-    testing.EnableDrones = true;
+    testing.EnableDrones = false;
     testing.ShipHeat = false;
 
     // debug

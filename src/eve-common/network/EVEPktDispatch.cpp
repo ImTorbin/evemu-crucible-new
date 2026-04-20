@@ -78,6 +78,10 @@ bool EVEPacketDispatcher::DispatchPacket(PyPacket* packet)
             if (packet->payload != nullptr && packet->payload->items.size() == 0) {
                 sLog.Warning("EVEPacketDispatcher",
                     "macho.CallReq with empty payload tuple (client probe); sending noop CallRsp.");
+                /* Match PyCallStream::Decode(): consume outer tuple so refcount/ownership equals the Decode path. */
+                PyTuple *payload = packet->payload;
+                packet->payload = nullptr;
+                PyDecRef(payload);
                 PyCallStream call;
                 call.is_noop_call = true;
                 call.remoteObject = 0;

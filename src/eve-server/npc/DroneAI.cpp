@@ -213,8 +213,9 @@ void DroneAIMgr::Target(SystemEntity* pTarget) {
         return;
     }
     m_beginFindTarget.Disable();
-    m_pDrone->UpdateEngageTarget(pTarget);
+    /* Set engaged first so UpdateEngageTarget()->StateChange() broadcasts activityState Engaged with targetID. */
     SetEngaged(pTarget);
+    m_pDrone->UpdateEngageTarget(pTarget);
     CheckDistance(pTarget);
 
     /*
