@@ -20,6 +20,8 @@ ADD /.git/ /src/.git
 RUN mkdir -p /src/build /app /app/logs /app/server_cache /app/image_cache
 # set our default path for the build
 WORKDIR /src/build
+# After pulling protocol/network fixes: force a clean rebuild so Docker does not reuse an old eve-common layer:
+#   docker compose build --no-cache server   OR   docker build --no-cache -t evemu .
 # and run the build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Debug .. 
 # we can pull the # of cores on the system and change the build to match the system

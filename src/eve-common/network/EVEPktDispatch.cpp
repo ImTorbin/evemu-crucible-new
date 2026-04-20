@@ -73,6 +73,21 @@ bool EVEPacketDispatcher::DispatchPacket(PyPacket* packet)
                 return false;
             }
 
+            /* Crucible sends CallReq with an empty outer payload tuple () on some packets; Decode() expects
+             * exactly one wrapper element. Handle here so login works even if an older libeve-common is linked. */
+            if (packet->payload != nullptr && packet->payload->items.size() == 0) {
+                sLog.Warning("EVEPacketDispatcher",
+                    "macho.CallReq with empty payload tuple (client probe); sending noop CallRsp.");
+                PyCallStream call;
+                call.is_noop_call = true;
+                call.remoteObject = 0;
+                call.remoteObjectStr.clear();
+                call.method.clear();
+                call.arg_tuple = new PyTuple(0);
+                call.arg_dict = nullptr;
+                return Handle_CallReq(packet, call);
+            }
+
             PyCallStream call;
             if (!call.Decode(packet->type_string, packet->payload)) {
                 sLog.Error("EVEPacketDispatcher","Failed to convert packet into a call stream");
