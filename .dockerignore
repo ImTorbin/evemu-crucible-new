@@ -1,10 +1,17 @@
+# Exclude whole context first; then explicitly include what the Dockerfile ADD/COPY needs.
+# Important: after '*', use '!dir/**' so files under that directory are sent — '!dir' alone is not enough.
 *
 !.git
 .git/objects/*
-!src
-!utils
-!sql
+!src/
+!src/**
+!utils/
+!utils/**
+!sql/
+!sql/**
 !CMakeLists.txt
-!cmake
-!dep
+!cmake/
+!cmake/**
+!dep/
+!dep/**
 !config.h.in

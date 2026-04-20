@@ -16,6 +16,11 @@ ADD /src/ /src/src
 ADD /utils/ /src/utils
 ADD /.git/ /src/.git
 
+# Fail fast if build context omitted sources (see .dockerignore: need !src/** not only !src).
+RUN grep -q 'empty macho.CallReq' /src/src/eve-common/python/PyPacket.cpp \
+    && grep -q 'client probe' /src/src/eve-common/network/EVEPktDispatch.cpp \
+    || (echo 'Docker context missing CallReq noop sources — fix .dockerignore or rebuild from repo root.'; exit 1)
+
 # make some folders we need for the build
 RUN mkdir -p /src/build /app /app/logs /app/server_cache /app/image_cache
 # set our default path for the build
