@@ -910,10 +910,10 @@ int main( int argc, char* argv[] )
         /*  process console commands, if any, and check for 'exit' command */
         m_run = sConsole.Process();
 
-        /* do the stuff for thread sleeping */
+        /* Yield until ServerSleepTime since loop start (sleep remaining ms, not elapsed). */
         start = GetTickCount() - start;
         if (m_sleepTime > start)
-            std::this_thread::sleep_for(std::chrono::milliseconds(start));
+            std::this_thread::sleep_for(std::chrono::milliseconds(m_sleepTime - start));
     }
 
     /*
