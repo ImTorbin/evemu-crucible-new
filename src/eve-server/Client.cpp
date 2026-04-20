@@ -2652,6 +2652,14 @@ void Client::_SendPingResponse(const PyAddress& source, int64 callID)
 /************************************************************************/
 bool Client::Handle_CallReq(PyPacket* packet, PyCallStream& req)
 {
+    if (req.is_noop_call) {
+        /* Empty CallReq envelope from client (Crucible); must still answer with CallRsp or client stalls. */
+        PyResult result(nullptr);
+        SendSessionChange();
+        _SendCallReturn(packet->dest, packet->source.callID, result);
+        return true;
+    }
+
     // build arguments
     PyCallArgs args(this, req.arg_tuple, req.arg_dict);
     PyResult result;

@@ -13,7 +13,11 @@
 
 
 #include "EVEServerConfig.h"
+#include "inventory/AttributeEnum.h"
+#include "npc/Drone.h"
 #include "npc/EntityService.h"
+#include "python/PyRep.h"
+#include "ship/Ship.h"
 #include "system/SystemManager.h"
 #include "services/ServiceManager.h"
 
@@ -176,10 +180,64 @@ PyResult EntityBound::CmdEngage(PyCallArgs &call, PyList* droneIDs, PyInt* targe
     }
         */
 
-    _log(DRONE__TRACE, "EntityBound::Handle_CmdEngage()");
+    _log(DRONE__TRACE, "EntityBound::CmdEngage()");
     call.Dump(DRONE__DUMP);
 
-    call.client->SendNotifyMsg("Drone Control is not implemented yet.");
+    if (!sConfig.testing.EnableDrones) {
+        call.client->SendNotifyMsg("Drone control is disabled on this server (EnableDrones).");
+        return new PyDict();
+    }
+
+    if (droneIDs == nullptr || targetID == nullptr)
+        return new PyDict();
+
+    Client* const pClient = call.client;
+    ShipSE* pShip = pClient->GetShipSE();
+    if (pShip == nullptr)
+        return new PyDict();
+
+    SystemEntity* tSE = m_sysMgr->GetSE(targetID->value());
+    if (tSE == nullptr || tSE->IsDead()) {
+        call.client->SendNotifyMsg("Engage target is not available.");
+        return new PyDict();
+    }
+    if (tSE->GetID() == pShip->GetID()) {
+        call.client->SendNotifyMsg("Drones cannot engage your own ship.");
+        return new PyDict();
+    }
+
+    double controlRange = pShip->GetShipRef()->GetAttribute(AttrDroneControlDistance).get_double();
+    if (controlRange < 100.0)
+        controlRange = 65000.0;
+
+    const GPoint shipPos = pShip->GetPosition();
+    if (shipPos.distance(tSE->GetPosition()) > controlRange) {
+        call.client->SendNotifyMsg(
+            "Target is beyond drone control range (%.0f m).",
+            controlRange);
+        return new PyDict();
+    }
+
+    for (PyList::const_iterator itr = droneIDs->begin(); itr != droneIDs->end(); ++itr) {
+        const uint32 droneID = PyRep::IntegerValueU32(*itr);
+        SystemEntity* dSE = m_sysMgr->GetSE(droneID);
+        if (dSE == nullptr || !dSE->IsDroneSE())
+            continue;
+
+        DroneSE* drone = dSE->GetDroneSE();
+        if (drone->GetOwner() != pClient)
+            continue;
+        if (!drone->IsEnabled())
+            continue;
+        if (shipPos.distance(drone->GetPosition()) > controlRange) {
+            _log(DRONE__WARNING, "CmdEngage: drone %u beyond control range from ship.", droneID);
+            continue;
+        }
+
+        drone->GetAI()->ClearTargets();
+        drone->GetAI()->Target(tSE);
+    }
+
     return new PyDict();
 }
 
@@ -277,21 +335,34 @@ PyResult EntityBound::CmdUnanchor(PyCallArgs &call, PyList* droneIDs, PyInt* tar
 
 PyResult EntityBound::CmdReturnHome(PyCallArgs &call, PyList* droneIDs) {
  // ret = entity.CmdReturnHome(droneIDs)
-    // this is return and orbit command
-    /*
-02:18:26 [DroneTrace] EntityBound::Handle_CmdReturnHome()
-02:18:26 [DroneDump]   Call Arguments:
-02:18:26 [DroneDump]      Tuple: 1 elements
-02:18:26 [DroneDump]       [ 0]   List: 1 elements
-02:18:26 [DroneDump]       [ 0]   [ 0]    Integer: 140001219
-*/
+    _log(DRONE__TRACE, "EntityBound::CmdReturnHome()");
     call.Dump(DRONE__DUMP);
 
-    //Drone* pDrone = m_sysMgr->GetSE()->GetDroneSE();
-    //pDrone->DestinyMgr()->Orbit(pShipSE, 800);
+    if (!sConfig.testing.EnableDrones) {
+        call.client->SendNotifyMsg("Drone control is disabled on this server (EnableDrones).");
+        return new PyDict();
+    }
+    if (droneIDs == nullptr)
+        return new PyDict();
 
+    Client* const pClient = call.client;
 
-    call.client->SendNotifyMsg("Drone Control is not implemented yet.");
+    for (PyList::const_iterator itr = droneIDs->begin(); itr != droneIDs->end(); ++itr) {
+        const uint32 droneID = PyRep::IntegerValueU32(*itr);
+        SystemEntity* dSE = m_sysMgr->GetSE(droneID);
+        if (dSE == nullptr || !dSE->IsDroneSE())
+            continue;
+
+        DroneSE* drone = dSE->GetDroneSE();
+        if (drone->GetOwner() != pClient)
+            continue;
+        if (!drone->IsEnabled())
+            continue;
+
+        drone->GetAI()->ClearTargets();
+        drone->GetAI()->Return();
+    }
+
     return new PyDict();
 }
 

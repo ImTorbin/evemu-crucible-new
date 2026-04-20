@@ -101,6 +101,11 @@ DroneSE::~DroneSE() {
     SafeDelete(m_AI);
 }
 
+void DroneSE::UpdateEngageTarget(SystemEntity* pSE) {
+    m_targetID = (pSE != nullptr ? pSE->GetID() : 0);
+    StateChange();
+}
+
 void DroneSE::SetOwner(Client* pClient) {
     m_self->ChangeOwner(pClient->GetCharacterID());
     m_pClient = pClient;

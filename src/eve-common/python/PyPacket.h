@@ -157,6 +157,9 @@ public:
     std::string method;
     PyTuple *arg_tuple;
     PyDict  *arg_dict;   //named parameters
+
+    /** True when Decode() sees an empty outer payload tuple (seen from Crucible client probes). */
+    bool is_noop_call;
 };
 
 class EVENotificationStream {

@@ -153,6 +153,8 @@ void DroneAIMgr::SetIdle() {
     m_mainAttackTimer.Disable();
     m_warpScramblerTimer.Disable();
 
+    m_pDrone->UpdateEngageTarget(nullptr);
+
     // orbit assigned ship
     m_pDrone->IdleOrbit(m_assignedShip);
 }
@@ -176,22 +178,15 @@ void DroneAIMgr::CheckDistance(SystemEntity* pSE)
     //rewrote distance checks for correct logic this time
     double dist = m_pDrone->GetPosition().distance(pSE->GetPosition());
     if (dist > m_entityAttackRange) {
-        _log(DRONE__AI_TRACE, "Drone %s(%u): CheckDistance: %s(%u) is too far away (%u).  Return to Idle.",
+        _log(DRONE__AI_TRACE, "Drone %s(%u): CheckDistance: %s(%u) is too far away (%f).  Return to Idle.",
              m_pDrone->GetName(), m_pDrone->GetID(), pSE->GetName(), pSE->GetID(), dist);
         if (m_state != DroneAI::State::Idle) {
-            // target is no longer in npc's "sight range".  unlock target and return to idle.
-            //   should we do anything else here?  search for another target?  wander around?
             ClearTarget(pSE);
         }
         return;
-    } else if (dist < m_entityFlyRange) { //within weapon max (and within falloff)
-        SetEngaged(pSE); //engage and orbit
-    } else if (dist < m_entityChaseRange) { //within follow
-       // SetFollowing(pSE);
-    } else if (dist < m_entityAttackRange) { //within sight
-       // SetChasing(pSE);
-        return;
     }
+    if (dist < m_entityFlyRange) // optimal + falloff band
+        SetEngaged(pSE);
 
     if (!m_mainAttackTimer.Enabled())
         m_mainAttackTimer.Start(m_attackSpeed);
@@ -218,6 +213,8 @@ void DroneAIMgr::Target(SystemEntity* pTarget) {
         return;
     }
     m_beginFindTarget.Disable();
+    m_pDrone->UpdateEngageTarget(pTarget);
+    SetEngaged(pTarget);
     CheckDistance(pTarget);
 
     /*

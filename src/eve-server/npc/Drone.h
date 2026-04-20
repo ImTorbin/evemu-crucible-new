@@ -108,7 +108,8 @@ public:
     bool IsEnabled()                                    { return m_online; }
 
     void AssignShip(ShipSE* pSE)                        { m_AI->AssignShip(pSE); }
-    void SetTarget(SystemEntity* pSE = nullptr)         { (pSE == nullptr ? 0 : m_targetID = pSE->GetID()); }
+    /** Updates broadcast drone target for OnDroneStateChange (engage / clear). */
+    void UpdateEngageTarget(SystemEntity* pSE);
 
     ShipSE* GetHomeShip()                               { return m_pShipSE; }
 

@@ -553,7 +553,8 @@ PyCallStream::PyCallStream()
 : remoteObject(0),
   method(""),
   arg_tuple(nullptr),
-  arg_dict(nullptr)
+  arg_dict(nullptr),
+  is_noop_call(false)
 {
 }
 
@@ -567,6 +568,7 @@ PyCallStream *PyCallStream::Clone() const {
     res->remoteObject = remoteObject;
     res->remoteObjectStr = remoteObjectStr;
     res->method = method;
+    res->is_noop_call = is_noop_call;
     res->arg_tuple = arg_tuple->Clone()->AsTuple();
     if (arg_dict == nullptr)
         res->arg_dict = nullptr;
@@ -602,6 +604,7 @@ bool PyCallStream::Decode(const std::string &type, PyTuple *&in_payload) {
     PySafeDecRef(arg_dict);
     arg_tuple = nullptr;
     arg_dict = nullptr;
+    is_noop_call = false;
 
     if (payload == nullptr) {
         codelog(NET__PACKET_ERROR, "PyCallStream::Decode() - payload is null.");
@@ -612,6 +615,19 @@ bool PyCallStream::Decode(const std::string &type, PyTuple *&in_payload) {
         codelog(NET__PACKET_ERROR, "PyCallStream::Decode() - packet payload has unknown string type '%s'", type.c_str());
         PyDecRef(payload);
         return false;
+    }
+
+    /* Crucible sends macho.CallReq with () occasionally (post-login); respond with noop CallRsp. */
+    if (payload->items.size() == 0) {
+        _log(NET__PACKET_WARNING, "PyCallStream::Decode() - empty macho.CallReq payload (noop).");
+        remoteObject = 0;
+        remoteObjectStr.clear();
+        method.clear();
+        arg_tuple = new PyTuple(0);
+        arg_dict = nullptr;
+        is_noop_call = true;
+        PyDecRef(payload);
+        return true;
     }
 
     if (payload->items.size() != 1) {
